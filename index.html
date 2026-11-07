@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>42 Staking — Delegate 42 on 42 Chain</title>
+<link rel="stylesheet" href="./style.css?v=1" />
+<script>
+/* Language gate: a saved choice (42staking_lang = "ja") goes to the
+   Japanese page; anything else — including no saved choice — defaults
+   to English. Same scheme as the QOM staking site. */
+(function () {
+  var lang = null;
+  try { lang = localStorage.getItem("42staking_lang"); } catch (e) { /* storage unavailable: default English */ }
+  location.replace(lang === "ja" ? "ja.html" : "en.html");
+})();
+</script>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>42 Staking</h1>
+      <p class="sub">Choose your language / 言語を選んでください</p>
+      <p class="sub"><a href="en.html">English</a> ・ <a href="ja.html">日本語</a></p>
+      <noscript><p class="sub">JavaScript is disabled — please use the links above. / JavaScript が無効です。上のリンクからお進みください。</p></noscript>
+    </div>
+  </header>
+</body>
+</html>

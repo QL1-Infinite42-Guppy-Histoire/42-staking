@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>42 委任 — 42 Chain ステーキング</title>
+<link rel="stylesheet" href="./style.css?v=1" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <p class="sub" style="margin-bottom:2px;">🐟 グッピーズガイド（Guppy's Guide） — あわてないで。42 Chain・QL1 のための道具箱</p>
+      <h1>42 委任</h1>
+      <p class="sub">42 Chain のバリデーターに 42 を直接預けて、報酬を受け取るためのサイトです。流動性ステーキング（st42）ではなく、直接委任です。署名は MetaMask などの EVM ウォレットで行います。</p>
+      <p class="sub">全ての製品はオープンソース（MITライセンス）です</p>
+    </div>
+    <div class="top-right">
+      <span class="lang-switch"><label>言語 / Language <select id="langSel"><option value="en">English</option><option value="ja" selected>日本語</option></select></label></span>
+      <div id="accountBox" class="row"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="walletMissing" class="card warn hidden">
+      <h2>対応ウォレットが見つかりません</h2>
+      <p>このサイトは EVM ウォレット全般（MetaMask、FoxWallet の EVM モード、GuppyWallet 拡張機能など）で使います。PC ではウォレット拡張機能を入れてから開くか、スマホではウォレットアプリ内のブラウザで開いてください。</p>
+      <p><a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask ダウンロード</a> ／ <a href="https://foxwallet.com/download" target="_blank" rel="noreferrer">FoxWallet ダウンロード</a></p>
+    </section>
+
+    <section id="myPanel" class="card hidden">
+      <h2>あなたの状況</h2>
+      <div class="stats">
+        <div class="stat"><span class="label">使える 42</span><span class="value" id="stAvailable">—</span></div>
+        <div class="stat"><span class="label">委任中</span><span class="value" id="stDelegated">—</span></div>
+        <div class="stat"><span class="label">たまった報酬</span><span class="value" id="stRewards">—</span></div>
+        <div class="stat"><span class="label">解除手続き中</span><span class="value" id="stUnbonding">—</span></div>
+      </div>
+      <div class="row">
+        <button id="claimAllBtn" class="primary" disabled>報酬を全部受け取る</button>
+        <button id="reloadBtn">更新</button>
+        <span id="myStatus" class="status"></span>
+      </div>
+      <div id="myDelegations"></div>
+      <div id="myUnbonding"></div>
+    </section>
+
+    <section id="commissionPanel" class="card hidden">
+      <h2>バリデーター報酬（コミッション）</h2>
+      <p id="commissionBody" class="note">—</p>
+      <div class="row"><button id="commissionBtn" class="primary">コミッションを受け取る</button></div>
+    </section>
+
+    <section class="card">
+      <h2>バリデーター一覧</h2>
+      <p class="note">委任先はあとから変更（移す）もできます。解除して戻ってくるまで <span id="unbondDays">21</span> 日かかります（その間、報酬は付きません）。</p>
+      <div id="validatorList"><p class="note">読み込み中…</p></div>
+    </section>
+
+    <p class="foot note">
+      手数料は各操作ごとにウォレットの確認画面に表示されます。報酬の量はチェーンの状況で変わります（固定ではありません）。
+      秘密鍵はウォレットの中だけで扱われ、このサイトには渡りません。
+      初めて委任するときは、まず少額で試してください。
+    </p>
+
+    <details class="card">
+      <summary>詳細</summary>
+      <p class="note">
+        ステーキング・プリコンパイル: 0x0000000000000000000000000000000000000800（validators / delegation / unbondingDelegation / delegate / undelegate / redelegate）。
+        配布プリコンパイル: 0x0000000000000000000000000000000000000801（delegationTotalRewards / delegationRewards / validatorCommission / withdrawDelegatorRewards / withdrawValidatorCommission）。
+        このチェーンには委任一覧の取得メソッドがないため、サイトは全バリデーターに1件ずつ確認しています（25件）。
+        「報酬を全部受け取る」はバリデーターごとに1件ずつ取引を送ります。解除には21日かかります。
+        チェーン: 42 Chain（EVMチェーンID 421018、Cosmos ID infinite_421018-1）、ネイティブトークン 42（基本単位 “drop”、18桁）。
+      </p>
+      <p class="note">
+        その他のツール: <a href="https://ql1-infinite42-guppy-histoire.github.io/links/" target="_blank" rel="noreferrer">グッピーズガイド — 製品リンク集</a> ・
+        <a href="https://ql1-infinite42-guppy-histoire.github.io/qom-staking/" target="_blank" rel="noreferrer">QOM ステーキング（QL1 で QOM を委任）</a>
+      </p>
+    </details>
+  </main>
+
+  <div id="modalBack" class="modal-back hidden">
+    <div class="modal card">
+      <h2 id="modalTitle">委任する</h2>
+      <div id="modalBody"></div>
+      <div class="row">
+        <button id="modalCancel">やめる</button>
+        <button id="modalOk" class="primary">ウォレットで確認する</button>
+      </div>
+      <p id="modalStatus" class="status"></p>
+    </div>
+  </div>
+
+  <script src="./app.js?v=1"></script>
+</body>
+</html>

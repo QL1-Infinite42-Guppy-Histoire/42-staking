@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Delegate 42 — 42 Chain Staking</title>
+<link rel="stylesheet" href="./style.css?v=1" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <p class="sub" style="margin-bottom:2px;">🐟 Guppy's Guide — Don't Panic — a hitchhiker's toolbox for 42 Chain &amp; QL1</p>
+      <h1>Delegate 42</h1>
+      <p class="sub">Delegate 42 directly to 42 Chain validators and receive rewards. This is direct delegation — not liquid staking (st42). Signing is done with MetaMask or any EVM wallet.</p>
+      <p class="sub">All products are open source (MIT)</p>
+    </div>
+    <div class="top-right">
+      <span class="lang-switch"><label>Language / 言語 <select id="langSel"><option value="en" selected>English</option><option value="ja">日本語</option></select></label></span>
+      <div id="accountBox" class="row"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="walletMissing" class="card warn hidden">
+      <h2>No supported wallet found</h2>
+      <p>This site works with any EVM wallet (MetaMask, FoxWallet in EVM mode, the GuppyWallet extension, and others). On a PC, install a wallet extension first and then open this page; on a phone, open it in your wallet app's built-in browser.</p>
+      <p><a href="https://metamask.io/download/" target="_blank" rel="noreferrer">MetaMask download</a> / <a href="https://foxwallet.com/download" target="_blank" rel="noreferrer">FoxWallet download</a></p>
+    </section>
+
+    <section id="myPanel" class="card hidden">
+      <h2>Your status</h2>
+      <div class="stats">
+        <div class="stat"><span class="label">Available 42</span><span class="value" id="stAvailable">—</span></div>
+        <div class="stat"><span class="label">Delegated</span><span class="value" id="stDelegated">—</span></div>
+        <div class="stat"><span class="label">Accumulated rewards</span><span class="value" id="stRewards">—</span></div>
+        <div class="stat"><span class="label">Unbonding</span><span class="value" id="stUnbonding">—</span></div>
+      </div>
+      <div class="row">
+        <button id="claimAllBtn" class="primary" disabled>Claim all rewards</button>
+        <button id="reloadBtn">Reload</button>
+        <span id="myStatus" class="status"></span>
+      </div>
+      <div id="myDelegations"></div>
+      <div id="myUnbonding"></div>
+    </section>
+
+    <section id="commissionPanel" class="card hidden">
+      <h2>Validator commission</h2>
+      <p id="commissionBody" class="note">—</p>
+      <div class="row"><button id="commissionBtn" class="primary">Claim commission</button></div>
+    </section>
+
+    <section class="card">
+      <h2>Validators</h2>
+      <p class="note">You can change your delegation target later (move it to another validator). After undelegating, it takes <span id="unbondDays">21</span> days for the 42 to come back (no rewards accrue during that time).</p>
+      <div id="validatorList"><p class="note">Loading…</p></div>
+    </section>
+
+    <p class="foot note">
+      Fees are shown on the wallet's confirmation screen for each operation. Reward amounts vary with chain conditions (they are not fixed).
+      Private keys are handled only inside your wallet and are never passed to this site.
+      For your first delegation, start with a small amount.
+    </p>
+
+    <details class="card">
+      <summary>Details</summary>
+      <p class="note">
+        Staking precompile: 0x0000000000000000000000000000000000000800 (validators / delegation / unbondingDelegation / delegate / undelegate / redelegate).
+        Distribution precompile: 0x0000000000000000000000000000000000000801 (delegationTotalRewards / delegationRewards / validatorCommission / withdrawDelegatorRewards / withdrawValidatorCommission).
+        This chain has no delegation-list method, so the site checks your delegation with every validator individually (25 checks).
+        Claiming all rewards sends one transaction per validator. Unbonding takes 21 days.
+        Chain: 42 Chain (EVM chain ID 421018, Cosmos ID infinite_421018-1), native token 42 (base denom “drop”, 18 decimals).
+      </p>
+      <p class="note">
+        More tools: <a href="https://ql1-infinite42-guppy-histoire.github.io/links/" target="_blank" rel="noreferrer">Guppy's Guide — product links</a> ·
+        <a href="https://ql1-infinite42-guppy-histoire.github.io/qom-staking/" target="_blank" rel="noreferrer">QOM Staking (delegate QOM on QL1)</a>
+      </p>
+    </details>
+  </main>
+
+  <div id="modalBack" class="modal-back hidden">
+    <div class="modal card">
+      <h2 id="modalTitle">Delegate</h2>
+      <div id="modalBody"></div>
+      <div class="row">
+        <button id="modalCancel">Cancel</button>
+        <button id="modalOk" class="primary">Confirm in wallet</button>
+      </div>
+      <p id="modalStatus" class="status"></p>
+    </div>
+  </div>
+
+  <script src="./app.js?v=1"></script>
+</body>
+</html>
