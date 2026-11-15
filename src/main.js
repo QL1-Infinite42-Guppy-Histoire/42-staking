@@ -212,7 +212,8 @@ function renderMine() {
           ? t("unbondingLine", format42(u.balance), dateStr, daysLeft)
           : t("unbondingDone", format42(u.balance), dateStr);
         return `<div class="kv"><span>${esc(u.validator.moniker || t("noName"))}</span><b>${esc(line)}</b></div>`;
-      }).join("");
+      }).join("") +
+      `<p class="note">${t("unbondingNoCancel")}</p>`;
   } else ub.innerHTML = "";
   bindDelegationButtons();
   renderValidators();
