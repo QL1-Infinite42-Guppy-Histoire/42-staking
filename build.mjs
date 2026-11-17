@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { cpSync, mkdirSync } from "node:fs";
+import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 mkdirSync("docs", { recursive: true });
 await build({
   entryPoints: ["src/main.js"],
@@ -14,4 +14,5 @@ cpSync("index.html", "docs/index.html");
 cpSync("ja.html", "docs/ja.html");
 cpSync("en.html", "docs/en.html");
 cpSync("src/style.css", "docs/style.css");
+writeFileSync("docs/CNAME", "staking.id42.win");
 console.log("docs/ ready");
