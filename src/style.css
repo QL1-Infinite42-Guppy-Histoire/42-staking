@@ -141,17 +141,32 @@ a { color: var(--accent); }
 .intro-note { font-size: 14px; color: var(--text); line-height: 1.7; margin: 0; }
 details.card summary { font-weight: 700; cursor: pointer; }
 
-/* ---- wider screens: a little more room, still one column ---- */
+/* ---- desktop (>=1024px): use the width — wide frame, but the operation
+   cards stay at a comfortable reading width, centred; lists/tables go wide ---- */
 @media (min-width: 1024px) {
-  .top, main { max-width: 720px; }
+  .top, main { max-width: 1120px; }
+  .top { padding-top: 28px; }
+  main { padding-left: 24px; padding-right: 24px; }
+  #walletMissing, .intro-card, .connect-card, #myPanel, #commissionPanel,
+  main > details.card, main > .foot { max-width: 720px; margin-left: auto; margin-right: auto; width: 100%; }
+  .validator-card { padding: 28px; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 18px; }
+  .sub { font-size: 14px; }
+  .card { padding: 28px; }
+  .connect-card { padding: 16px; }
   .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .stat .value { font-size: 26px; }
   #myDelegations, #myUnbonding { display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
   #myDelegations .deleg, #myUnbonding .deleg { margin-top: 0; }
-  #validatorList table { min-width: 620px; }
+  table { font-size: 15px; }
+  th, td { padding: 14px 12px; }
+  #validatorList table { min-width: 100%; }
 }
-/* ---- tablet (641-1023px) ---- */
+/* ---- tablet (641-1023px): roomier frame, still one column ---- */
 @media (min-width: 641px) and (max-width: 1023px) {
+  .top, main { max-width: 720px; }
   .stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   #myDelegations, #myUnbonding { display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
