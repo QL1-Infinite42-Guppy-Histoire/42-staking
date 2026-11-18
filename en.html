@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>42 Staking — 42 Chain</title>
 <script>(function(){try{document.documentElement.dataset.theme=localStorage.getItem("guppy-theme")==="dark"?"dark":"light";}catch(e){document.documentElement.dataset.theme="light";}})();</script>
-<link rel="stylesheet" href="./style.css?v=3" />
+<link rel="stylesheet" href="./style.css?v=4" />
 </head>
 <body>
   <header class="top">
@@ -28,6 +28,10 @@
       <p class="intro-lead">When you stake 42 with a validator, you earn rewards (yield) from the network.</p>
       <p class="intro-note">Your stake helps secure the network, and you receive rewards in return. The reward rate is not fixed and varies with network conditions.</p>
     </section>
+    <section id="connectCard" class="card connect-card">
+      <div id="mainConnectBox"></div>
+    </section>
+
     <section id="walletMissing" class="card warn hidden">
       <h2>MetaMask not found</h2>
       <p>This site works with MetaMask. On a PC, install the MetaMask extension first and then open this page; on a phone, open it in the MetaMask app's built-in browser.</p>
@@ -97,7 +101,7 @@
     </div>
   </div>
 
-  <script src="./app.js?v=1"></script>
+  <script src="./app.js?v=2"></script>
 <script>
 (function(){var b=document.getElementById("themeToggle");if(!b)return;var ja=document.documentElement.lang==="ja";function render(){var d=document.documentElement.dataset.theme==="dark";b.textContent=d?(ja?"\u2600\uFE0F \u767D\u80CC\u666F":"\u2600\uFE0F Light"):(ja?"\uD83C\uDF19 \u9ED2\u80CC\u666F":"\uD83C\uDF19 Dark");}b.addEventListener("click",function(){var n=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=n;try{localStorage.setItem("guppy-theme",n);}catch(e){}render();});render();})();
 </script>

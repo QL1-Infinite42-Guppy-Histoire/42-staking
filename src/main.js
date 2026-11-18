@@ -92,9 +92,12 @@ async function ensureChain(eth) {
   }
 }
 
+let connectBusy = false;
 async function connect(btn) {
   const eth = window.ethereum;
   if (!eth) { alert(t("errNoWallet")); return; }
+  if (connectBusy) return;
+  connectBusy = true;
   btn.disabled = true; btn.textContent = t("connecting");
   try {
     const accounts = await eth.request({ method: "eth_requestAccounts" });
@@ -103,23 +106,37 @@ async function connect(btn) {
     myAddress = accounts[0];
     $("accountBox").innerHTML = `<div class="addr">${t("connectedAs")}${esc(myAddress)}</div>`;
     $("myPanel").classList.remove("hidden");
+    const cc = $("connectCard"); if (cc) cc.classList.add("hidden");
     await reloadAll();
   } catch (e) {
+    connectBusy = false;
     btn.disabled = false; btn.textContent = t("connectBtn");
     alert(t("connectFailed") + (e?.message ?? e));
   }
 }
 
 function renderConnectButton() {
+  // Explicit connect buttons, always rendered (header + a full-width one in
+  // the main area). Never gate them on a load-time wallet check: providers
+  // are often injected after page load, and connect() reads window.ethereum
+  // at click time and reports clearly when no wallet is there.
   const box = $("accountBox");
   box.innerHTML = "";
-  if (!window.ethereum) { $("walletMissing").classList.remove("hidden"); return; }
   $("walletMissing").classList.add("hidden");
   const b = document.createElement("button");
   b.className = "primary";
   b.textContent = t("connectBtn");
   b.addEventListener("click", () => connect(b));
   box.appendChild(b);
+  const main = $("mainConnectBox");
+  if (main) {
+    main.innerHTML = "";
+    const mb = document.createElement("button");
+    mb.className = "primary big-connect";
+    mb.textContent = t("connectBtn");
+    mb.addEventListener("click", () => connect(mb));
+    main.appendChild(mb);
+  }
 }
 
 async function getSigner() {
