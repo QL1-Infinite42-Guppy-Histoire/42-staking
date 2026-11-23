@@ -431,9 +431,13 @@ async function doClaimAll() {
   } finally {
     btn.disabled = false;
     // Refresh balances/rewards without wiping the result message afterwards.
+    // Capture the error styling BEFORE reloadAll: it rewrites myStatus
+    // (clearing the class on success), so reading it afterwards would
+    // pair the restored message with the reload's styling instead.
     const msg = $("myStatus").textContent;
+    const wasErr = $("myStatus").classList.contains("err");
     await reloadAll();
-    if (msg) setStatus("myStatus", msg, $("myStatus").classList.contains("err"));
+    if (msg) setStatus("myStatus", msg, wasErr);
   }
 }
 
