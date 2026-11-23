@@ -4,6 +4,7 @@ import {
   STAKING_ABI, DISTRIBUTION_ABI, GAS_LIMITS, FALLBACK_GAS_PRICE, UNBONDING_DAYS,
   E18, percentOf, delegateMax, format42, weiToDecimalString,
   getReadProvider, fetchValidators, fetchMyState, fetchValidatorCommission,
+  getReadFailures,
 } from "./chain.js";
 import { t, LANG, LOCALE } from "./i18n.js";
 
@@ -181,6 +182,7 @@ async function reloadAll() {
       myCommissionWei = myValidator ? await fetchValidatorCommission(myValidator.valoper) : 0n;
       renderMine();
       renderCommission();
+      updateReadWarn();
     }
     setStatus("myStatus", "");
   } catch (e) {
@@ -189,6 +191,17 @@ async function reloadAll() {
 }
 
 // ---- rendering -----------------------------------------------------------------
+// Some per-validator reads failed (RPC errors): the affected figures fall
+// back to 0, which would look like "nothing staked / no rewards". Surface
+// that honestly instead of presenting the zeros as fact.
+function updateReadWarn() {
+  const el = $("readWarn");
+  if (!el) return;
+  const failed = getReadFailures() > 0;
+  el.textContent = failed ? t("partialReadWarn") : "";
+  el.classList.toggle("hidden", !failed);
+}
+
 function renderMine() {
   const s = myState;
   $("stAvailable").textContent = format42(s.balance) + " 42";

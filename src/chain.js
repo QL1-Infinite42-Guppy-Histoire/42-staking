@@ -148,6 +148,22 @@ export function parse42ToWei(input) {
 export function totalRewardRawToWei(raw) { return BigInt(raw); }
 export function decRewardRawToWei(raw) { return BigInt(raw); }
 
+// ---- read-failure tracking ----------------------------------------------------
+// The per-validator fetch helpers below keep their historical behaviour of
+// returning an empty value when a read fails, so the numbers themselves
+// never change — but that makes a failed read indistinguishable from a
+// genuine zero. Transport/RPC failures are therefore counted here so the
+// UI can warn that the figures shown may be incomplete. Contract reverts
+// (CALL_EXCEPTION) mean the precompile answered — e.g. "no delegation
+// exists" — and are NOT counted as failures.
+let readFailures = 0;
+export function resetReadFailures() { readFailures = 0; }
+export function getReadFailures() { return readFailures; }
+function noteReadFailure(e) {
+  if (e && e.code === "CALL_EXCEPTION") return;
+  readFailures++;
+}
+
 // ---- read provider with RPC rotation ----------------------------------------
 let cachedProvider = null;
 let cachedStaking = null;
@@ -214,7 +230,7 @@ export async function fetchDelegation(delegator, valoper) {
     const balance = res.balance ?? res[1];
     const amount = balance?.amount ?? balance?.[1] ?? 0n;
     return BigInt(amount);
-  } catch { return 0n; }
+  } catch (e) { noteReadFailure(e); return 0n; }
 }
 
 export async function fetchUnbonding(delegator, valoper) {
@@ -230,7 +246,7 @@ export async function fetchUnbonding(delegator, valoper) {
       balance: BigInt(e.balance ?? e[3] ?? 0n),
       unbondingId: (e.unbondingId ?? e[4] ?? 0).toString(),
     }));
-  } catch { return []; }
+  } catch (e) { noteReadFailure(e); return []; }
 }
 
 export async function fetchTotalRewards(delegator) {
@@ -251,7 +267,7 @@ export async function fetchTotalRewards(delegator) {
       out.set(valoper, sum);
     }
     return out;
-  } catch { return new Map(); }
+  } catch (e) { noteReadFailure(e); return new Map(); }
 }
 
 export async function fetchDelegationRewards(delegator, valoper) {
@@ -266,7 +282,7 @@ export async function fetchDelegationRewards(delegator, valoper) {
       if (denom === "drop") sum += decRewardRawToWei(amount);
     }
     return sum;
-  } catch { return 0n; }
+  } catch (e) { noteReadFailure(e); return 0n; }
 }
 
 export async function fetchValidatorCommission(valoper) {
@@ -281,10 +297,11 @@ export async function fetchValidatorCommission(valoper) {
       if (denom === "drop") sum += decRewardRawToWei(amount);
     }
     return sum;
-  } catch { return 0n; }
+  } catch (e) { noteReadFailure(e); return 0n; }
 }
 
 export async function fetchMyState(address, validatorsAll) {
+  resetReadFailures();
   const provider = await getReadProvider();
   const balance = await provider.getBalance(address);
   const delegations = [];
@@ -315,5 +332,5 @@ export async function fetchMyState(address, validatorsAll) {
   }
   let unbondingTotal = 0n;
   for (const u of unbonding) unbondingTotal += u.balance;
-  return { balance, delegations, unbonding, totalDelegated, totalRewards, unbondingTotal, rewardsByValoper };
+  return { balance, delegations, unbonding, totalDelegated, totalRewards, unbondingTotal, rewardsByValoper, failedReads: readFailures };
 }
