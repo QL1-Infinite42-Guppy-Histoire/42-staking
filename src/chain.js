@@ -126,6 +126,12 @@ export function format42(wei, maxDp = 4) {
   const frac = (v % E18).toString().padStart(18, "0").slice(0, maxDp).replace(/0+$/, "");
   return (neg ? "-" : "") + whole.toLocaleString("en-US") + (frac ? "." + frac : "");
 }
+// Display-only integer variant (2026-11-25): the status card and the
+// per-validator rows show whole [42] only — the fractional part is
+// truncated (BigInt division in format42 already floors toward zero),
+// never rounded. Internal values and amounts actually sent keep full
+// precision; only these rendered strings drop the decimals.
+export function format42Int(wei) { return format42(wei, 0); }
 export function weiToDecimalString(v) {
   v = BigInt(v);
   const whole = v / E18;

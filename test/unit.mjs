@@ -2,7 +2,7 @@
 import assert from "node:assert";
 import {
   valoperFromHex, bech32Encode, hexToBytes,
-  percentOf, delegateMax, gasReserve, format42, parse42ToWei, weiToDecimalString, E18,
+  percentOf, delegateMax, gasReserve, format42, format42Int, parse42ToWei, weiToDecimalString, E18,
 } from "../src/chain.js";
 
 // bech32 known pair (live-verified)
@@ -35,6 +35,12 @@ console.log("delegateMax: OK reserve =", weiToDecimalString(gasReserve(gp)), "42
 // format / parse roundtrip
 assert.strictEqual(format42(401139878041663617428n), "401.1398");
 assert.strictEqual(format42(10868000000000000000000n), "10,868");
+// Integer-only display variant: fraction truncated (floored), never rounded.
+const trillionWei = 1000048951521n * E18 + 52n * E18 / 100n; // 1,000,048,951,521.52 [42]
+assert.strictEqual(format42Int(trillionWei), "1,000,048,951,521");
+assert.strictEqual(format42Int(1999999999999999999n), "1"); // 1.999… -> 1, not 2
+assert.strictEqual(format42Int(999999999999999999n), "0"); // 0.999… -> 0
+assert.strictEqual(format42Int(-1500000000000000000n), "-1");
 assert.strictEqual(parse42ToWei("1.5"), 15n * E18 / 10n);
 assert.strictEqual(weiToDecimalString(percentOf(delegateMax(bal, gp), 100)), weiToDecimalString(delegateMax(bal, gp)));
 console.log("format/parse: OK");

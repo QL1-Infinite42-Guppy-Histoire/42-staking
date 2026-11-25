@@ -2,7 +2,7 @@ import { BrowserProvider, Contract } from "ethers";
 import {
   CHAIN_ID_HEX, EXPLORER_TX, STAKING_PRECOMPILE, DISTRIBUTION_PRECOMPILE,
   STAKING_ABI, DISTRIBUTION_ABI, GAS_LIMITS, FALLBACK_GAS_PRICE, UNBONDING_DAYS,
-  E18, percentOf, delegateMax, format42, weiToDecimalString,
+  E18, percentOf, delegateMax, format42, format42Int, weiToDecimalString,
   getReadProvider, fetchValidators, fetchMyState, fetchValidatorCommission,
   getReadFailures,
 } from "./chain.js";
@@ -38,14 +38,49 @@ function commissionPct(commissionWei) {
   return (Math.round(pct * 100) / 100).toString() + "%";
 }
 function fmtCompact(wei) {
+  // Abbreviated totals in validator rows are integer-only too
+  // (2026-11-25): the scaled value is floored, never rounded up.
   const n = Number(BigInt(wei || 0n) / E18);
   if (LANG === "ja") {
-    if (n >= 1e8) return (n / 1e8).toLocaleString("ja-JP", { maximumFractionDigits: 2 }) + "億";
-    if (n >= 1e4) return (n / 1e4).toLocaleString("ja-JP", { maximumFractionDigits: 2 }) + "万";
+    if (n >= 1e8) return Math.floor(n / 1e8).toLocaleString("ja-JP") + "億";
+    if (n >= 1e4) return Math.floor(n / 1e4).toLocaleString("ja-JP") + "万";
     return n.toLocaleString("ja-JP");
   }
-  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 }).format(n);
+  if (n >= 1e9) return Math.floor(n / 1e9).toLocaleString("en-US") + "B";
+  if (n >= 1e6) return Math.floor(n / 1e6).toLocaleString("en-US") + "M";
+  if (n >= 1e3) return Math.floor(n / 1e3).toLocaleString("en-US") + "K";
+  return n.toLocaleString("en-US");
 }
+
+// ---- display fitting (2026-11-25) -------------------------------------------
+// Status amounts can reach trillion scale (13+ digits): the .stat box is
+// clip-path clipped, so an oversized value was cut off mid-number. Fit by
+// measurement: reset to the CSS size, then shrink the font until the
+// single-line value fits the box. Display only — text itself unchanged.
+function fitToWidth(el) {
+  if (!el) return;
+  el.style.fontSize = "";
+  if (!el.clientWidth) return;
+  let size = parseFloat(getComputedStyle(el).fontSize);
+  let guard = 40;
+  while (el.scrollWidth > el.clientWidth + 1 && size > 9 && guard-- > 0) {
+    const next = Math.max(9, Math.floor(size * (el.clientWidth / el.scrollWidth) * 10) / 10 - 0.5);
+    if (next >= size) break;
+    size = next;
+    el.style.fontSize = size + "px";
+  }
+}
+function fitStatusAmounts() {
+  ["stAvailable", "stDelegated", "stRewards", "stUnbonding"].forEach((id) => fitToWidth($(id)));
+}
+// Per-validator amount lines wrap rather than clip, but a very long line
+// still reads badly: step the font down as the rendered line grows.
+function shrinkLine(el) {
+  if (!el) return;
+  const len = el.textContent.length;
+  el.style.fontSize = len > 64 ? "12px" : len > 52 ? "13px" : len > 40 ? "14px" : "";
+}
+window.addEventListener("resize", fitStatusAmounts);
 
 // ---- state -------------------------------------------------------------------
 let myAddress = null;
@@ -204,11 +239,12 @@ function updateReadWarn() {
 
 function renderMine() {
   const s = myState;
-  $("stAvailable").textContent = format42(s.balance) + " 42";
-  $("stDelegated").textContent = format42(s.totalDelegated) + " 42";
-  $("stRewards").textContent = format42(s.totalRewards) + " 42";
+  $("stAvailable").textContent = format42Int(s.balance) + " 42";
+  $("stDelegated").textContent = format42Int(s.totalDelegated) + " 42";
+  $("stRewards").textContent = format42Int(s.totalRewards) + " 42";
   $("stUnbonding").textContent = s.unbonding.length
-    ? `${format42(s.unbondingTotal)} 42 (${s.unbonding.length})` : "0 42";
+    ? `${format42Int(s.unbondingTotal)} 42 (${s.unbonding.length})` : "0 42";
+  fitStatusAmounts();
   const claimable = s.delegations.filter((d) => (d.rewardWei ?? 0n) >= CLAIM_MIN_WEI);
   $("claimAllBtn").disabled = !claimable.length;
   $("claimAllBtn").textContent = t("claimAllBtn");
@@ -221,7 +257,7 @@ function renderMine() {
       <div class="deleg">
         <div class="head">
           <b>${esc(d.validator.moniker || t("noName"))}</b>
-          <span>${t("delegatedLine", format42(d.amountWei), format42(d.rewardWei ?? 0n))}</span>
+          <span class="amount-line">${t("delegatedLine", format42Int(d.amountWei), format42Int(d.rewardWei ?? 0n))}</span>
         </div>
         <div class="row">
           <button data-act="more" data-val="${esc(d.validator.valoper)}">${t("actMore")}</button>
@@ -231,6 +267,7 @@ function renderMine() {
         </div>
       </div>`).join("");
   }
+  box.querySelectorAll(".amount-line").forEach(shrinkLine);
   const ub = $("myUnbonding");
   if (s.unbonding.length) {
     const nowSec = Math.floor(Date.now() / 1000);
@@ -268,7 +305,7 @@ function renderValidators() {
       ${validatorsBonded.map((v) => {
         const mine = myByVal.get(v.valoper);
         return `<tr>
-          <td><b>${esc(v.moniker || t("noName"))}</b>${v.jailed ? '<span class="badge warn">' + t("jailedBadge") + '</span>' : ""}${mine ? `<div class="mine">${t("youLabel")}${format42(mine.amountWei)} 42</div>` : ""}</td>
+          <td><b>${esc(v.moniker || t("noName"))}</b>${v.jailed ? '<span class="badge warn">' + t("jailedBadge") + '</span>' : ""}${mine ? `<div class="mine">${t("youLabel")}${format42Int(mine.amountWei)} 42</div>` : ""}</td>
           <td><span class="badge on">${t("statusBonded")}</span></td>
           <td>${commissionPct(v.commission)}</td>
           <td>${fmtCompact(v.tokens)} 42</td>
