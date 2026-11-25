@@ -44,4 +44,27 @@ assert.strictEqual(format42Int(-1500000000000000000n), "-1");
 assert.strictEqual(parse42ToWei("1.5"), 15n * E18 / 10n);
 assert.strictEqual(weiToDecimalString(percentOf(delegateMax(bal, gp), 100)), weiToDecimalString(delegateMax(bal, gp)));
 console.log("format/parse: OK");
+
+// Connect button: always visible (regression guard for the source wiring).
+// - rendered immediately + unconditionally, never gated on window.ethereum
+// - provider re-acquired at click time; late injection handled
+// - no-wallet click shows the guidance card next to the still-visible
+//   button instead of an alert that leaves the card hidden forever
+import { readFileSync } from "node:fs";
+const mainSrc = readFileSync(new URL("../src/main.js", import.meta.url), "utf8");
+assert.ok(mainSrc.includes("\nrenderConnectButton();\nattachWalletListeners(getProvider());"),
+  "connect button rendered immediately, not only on window load");
+assert.ok(!/if\s*\(\s*window\.ethereum\s*\)\s*\{?\s*renderConnectButton/.test(mainSrc),
+  "connect button render must not be gated on window.ethereum");
+assert.ok(mainSrc.includes('window.addEventListener("ethereum#initialized"'),
+  "late provider injection (ethereum#initialized) handled");
+assert.ok(mainSrc.includes("const eth = getProvider();"),
+  "provider re-acquired at click time");
+assert.ok(mainSrc.includes("if (!eth) { showNoWalletGuidance(); return; }"),
+  "no-wallet click shows guidance, keeps button visible");
+assert.ok(mainSrc.includes('el.classList.remove("hidden")'),
+  "guidance card is unhidden on no-wallet click");
+assert.ok(!mainSrc.includes('alert(t("errNoWallet"))'),
+  "no-wallet path must not be alert-only");
+console.log("connect-button always-visible: OK");
 console.log("ALL UNIT TESTS PASSED");

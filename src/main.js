@@ -128,10 +128,42 @@ async function ensureChain(eth) {
   }
 }
 
+// Provider is acquired fresh at click time, never cached at load:
+// wallet browsers can inject window.ethereum after the page has loaded.
+function getProvider() {
+  return typeof window !== "undefined" ? window.ethereum : undefined;
+}
+
+// No wallet at click time: show the guidance card (MetaMask download /
+// open-in-MetaMask-browser text) NEXT TO the connect buttons. The
+// buttons themselves stay rendered and visible — the notice never
+// replaces or hides them.
+function showNoWalletGuidance() {
+  const el = $("walletMissing");
+  if (el) el.classList.remove("hidden");
+}
+function hideNoWalletGuidance() {
+  const el = $("walletMissing");
+  if (el) el.classList.add("hidden");
+}
+
+// accountsChanged / chainChanged reload the page (existing behaviour).
+// Attach at most once per provider object, and also when the provider
+// arrives late (see the ethereum#initialized wiring at the bottom).
+let walletListenersFor = null;
+function attachWalletListeners(eth) {
+  if (!eth || walletListenersFor === eth) return;
+  walletListenersFor = eth;
+  eth.on?.("accountsChanged", () => location.reload());
+  eth.on?.("chainChanged", () => location.reload());
+}
+
 let connectBusy = false;
 async function connect(btn) {
-  const eth = window.ethereum;
-  if (!eth) { alert(t("errNoWallet")); return; }
+  const eth = getProvider();
+  if (!eth) { showNoWalletGuidance(); return; }
+  hideNoWalletGuidance();
+  attachWalletListeners(eth);
   if (connectBusy) return;
   connectBusy = true;
   btn.disabled = true; btn.textContent = t("connecting");
@@ -208,7 +240,7 @@ function renderConnectButton() {
   // at click time and reports clearly when no wallet is there.
   const box = $("accountBox");
   box.innerHTML = "";
-  $("walletMissing").classList.add("hidden");
+  hideNoWalletGuidance();
   const b = document.createElement("button");
   b.className = "primary";
   b.textContent = t("connectBtn");
@@ -583,16 +615,29 @@ $("modalOk").addEventListener("click", async () => {
     ok.disabled = false;
   }
 });
+// Render the connect buttons IMMEDIATELY (this script sits at the end
+// of <body>, so the DOM above it is already parsed) instead of waiting
+// for window "load": the button must be visible at all times, even
+// while fonts/images are still loading or a resource hangs. It is
+// rendered unconditionally — never gated on window.ethereum existing.
+renderConnectButton();
+attachWalletListeners(getProvider());
+// Late provider injection (wallet browsers): EIP-6963-style wallets
+// fire ethereum#initialized when window.ethereum becomes available.
+window.addEventListener("ethereum#initialized", () => {
+  attachWalletListeners(getProvider());
+}, { once: true });
+
 window.addEventListener("load", () => {
   initLangSelector();
   // Dialog strings come from the same i18n table as everything else.
   const dlgTitle = document.querySelector("#connDlg h3");
   if (dlgTitle) dlgTitle.textContent = t("connectedTitle");
   $("disconnectBtn").textContent = t("disconnectBtn");
-  renderConnectButton();
+  // Idempotent re-render, unless already connected (load fires before
+  // any user click in practice; guard so a late load can never wipe
+  // the connected-state address button).
+  if (!myAddress) renderConnectButton();
   reloadAll().catch(() => {});
-  if (window.ethereum) {
-    window.ethereum.on?.("accountsChanged", () => location.reload());
-    window.ethereum.on?.("chainChanged", () => location.reload());
-  }
+  attachWalletListeners(getProvider());
 });
