@@ -140,7 +140,16 @@ async function connect(btn) {
     if (!accounts?.length) throw new Error(t("errNoWallet"));
     await ensureChain(eth);
     myAddress = accounts[0];
-    $("accountBox").innerHTML = `<div class="addr">${t("connectedAs")}${esc(myAddress)}</div>`;
+    // The connected-state address is a button: tapping it opens the
+    // connection dialog (full address + Disconnect) instead of
+    // re-running the connect flow (same behaviour as qom-dex).
+    const box = $("accountBox");
+    box.innerHTML = "";
+    const ab = document.createElement("button");
+    ab.className = "addr";
+    ab.textContent = `${t("connectedAs")}${myAddress}`;
+    ab.addEventListener("click", () => onConnectClick(ab));
+    box.appendChild(ab);
     $("myPanel").classList.remove("hidden");
     const cc = $("connectCard"); if (cc) cc.classList.add("hidden");
     await reloadAll();
@@ -149,6 +158,47 @@ async function connect(btn) {
     btn.disabled = false; btn.textContent = t("connectBtn");
     alert(t("connectFailed") + (e?.message ?? e));
   }
+}
+
+// Connect-button click handler (qom-dex behaviour): when an account is
+// already connected, show the connection dialog with the full address
+// and a Disconnect choice — do NOT re-run the connect flow.
+function onConnectClick(btn) {
+  if (myAddress) {
+    $("connAddr").textContent = myAddress;
+    $("connDlg").showModal();
+    return;
+  }
+  connect(btn);
+}
+
+async function disconnect() {
+  // Ask the wallet to revoke this site's account permission where it
+  // supports it (MetaMask: wallet_revokePermissions); either way the
+  // local state is cleared below, and a revoked permission also stops
+  // any silent restore via eth_accounts from resurrecting the session.
+  try {
+    await window.ethereum?.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] });
+  } catch { /* wallet without revoke support: local disconnect only */ }
+  // This site persists no "was connected" flag (only language/theme),
+  // so clearing the in-memory session state is the whole local reset.
+  myAddress = null;
+  myState = null;
+  myValidator = null;
+  myCommissionWei = 0n;
+  connectBusy = false;
+  renderConnectButton(); // connect buttons return to the Connect label
+  $("myPanel").classList.add("hidden");
+  $("commissionPanel").classList.add("hidden");
+  const cc = $("connectCard"); if (cc) cc.classList.remove("hidden");
+  // Clear account-dependent UI back to the not-connected rendering.
+  ["stAvailable", "stDelegated", "stRewards", "stUnbonding"].forEach((id) => { $(id).textContent = "—"; });
+  $("myDelegations").innerHTML = "";
+  $("myUnbonding").innerHTML = "";
+  setStatus("myStatus", "");
+  updateReadWarn();
+  renderValidators(); // delegate buttons disabled, my-amounts gone
+  $("connDlg").close();
 }
 
 function renderConnectButton() {
@@ -162,7 +212,7 @@ function renderConnectButton() {
   const b = document.createElement("button");
   b.className = "primary";
   b.textContent = t("connectBtn");
-  b.addEventListener("click", () => connect(b));
+  b.addEventListener("click", () => onConnectClick(b));
   box.appendChild(b);
   const main = $("mainConnectBox");
   if (main) {
@@ -170,7 +220,7 @@ function renderConnectButton() {
     const mb = document.createElement("button");
     mb.className = "primary big-connect";
     mb.textContent = t("connectBtn");
-    mb.addEventListener("click", () => connect(mb));
+    mb.addEventListener("click", () => onConnectClick(mb));
     main.appendChild(mb);
   }
 }
@@ -505,6 +555,8 @@ function doClaimCommission() {
 }
 
 // ---- wiring ----------------------------------------------------------------------
+$("connClose").addEventListener("click", () => $("connDlg").close());
+$("disconnectBtn").addEventListener("click", disconnect);
 $("reloadBtn").addEventListener("click", reloadAll);
 $("claimAllBtn").addEventListener("click", doClaimAll);
 $("commissionBtn").addEventListener("click", doClaimCommission);
@@ -533,6 +585,10 @@ $("modalOk").addEventListener("click", async () => {
 });
 window.addEventListener("load", () => {
   initLangSelector();
+  // Dialog strings come from the same i18n table as everything else.
+  const dlgTitle = document.querySelector("#connDlg h3");
+  if (dlgTitle) dlgTitle.textContent = t("connectedTitle");
+  $("disconnectBtn").textContent = t("disconnectBtn");
   renderConnectButton();
   reloadAll().catch(() => {});
   if (window.ethereum) {
