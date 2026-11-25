@@ -398,15 +398,22 @@ function renderValidators() {
     </table>`;
   const unbondedHtml = validatorsUnbonded.length ? `
     <details style="margin-top:12px;">
-      <summary class="note">${t("unbondedTitle")} (${validatorsUnbonded.length})</summary>
+      <summary class="note">${t("otherTitle")} (${validatorsUnbonded.length})</summary>
       <table>
         <tr><th>${t("thName")}</th><th>${t("thStatus")}</th><th>${t("thCommission")}</th><th>${t("thTotalStaked")}</th></tr>
-        ${validatorsUnbonded.map((v) => `<tr>
-          <td><b>${esc(v.moniker || t("noName"))}</b></td>
-          <td><span class="badge">${t("statusUnbonded")}</span></td>
+        ${validatorsUnbonded.map((v) => {
+          // This list holds every validator not in the active list —
+          // genuinely inactive ones, but also unbonding or jailed
+          // bonded validators — so label each row with ITS OWN status
+          // instead of stamping them all "Inactive".
+          const label = v.status === 3 ? t("statusBonded") : v.status === 2 ? t("statusUnbonding") : t("statusUnbonded");
+          return `<tr>
+          <td><b>${esc(v.moniker || t("noName"))}</b>${v.jailed ? '<span class="badge warn">' + t("jailedBadge") + "</span>" : ""}</td>
+          <td><span class="badge">${esc(label)}</span></td>
           <td>${commissionPct(v.commission)}</td>
           <td>${fmtCompact(v.tokens)} 42</td>
-        </tr>`).join("")}
+        </tr>`;
+        }).join("")}
       </table>
     </details>` : "";
   $("validatorList").innerHTML = bondedHtml + unbondedHtml;

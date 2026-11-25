@@ -87,6 +87,7 @@ const STRINGS = {
     reloadBtn: "更新",
     validatorsNote: (days) => `ステーキング先はあとから変更（移す）もできます。解除して戻ってくるまで ${days} 日かかります（その間、報酬は付きません）。`,
     unbondedTitle: "停止中のバリデーター",
+    otherTitle: "その他のバリデーター",
   },
   en: {
     errAmountFormat: "Invalid amount format",
@@ -166,6 +167,7 @@ const STRINGS = {
     reloadBtn: "Reload",
     validatorsNote: (days) => `You can change your staking validator later (move it to another validator). After unstaking, it takes ${days} days for the 42 to come back (no rewards accrue during that time).`,
     unbondedTitle: "Inactive validators",
+    otherTitle: "Other validators",
   },
 };
 

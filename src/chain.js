@@ -204,8 +204,24 @@ export async function getDistRead() {
 export async function fetchValidators() {
   const c = await getStakingRead();
   const fetchStatus = async (status) => {
-    const [list] = await c.validators(status, PAGE_REQUEST);
-    return list.map((v) => {
+    // Follow the precompile's pagination: one call returns at most
+    // PAGE_REQUEST.limit entries, so a validator set larger than one
+    // page would be silently truncated without this loop. Stop when
+    // the collected count reaches the reported total or the node
+    // returns no continuation key (whichever comes first).
+    const raw = [];
+    let key = PAGE_REQUEST.key;
+    for (let page = 0; page < 20; page++) {
+      const res = await c.validators(status, { ...PAGE_REQUEST, key });
+      const list = res[0] ?? res.validators ?? [];
+      raw.push(...Array.from(list));
+      const pr = res[1] ?? res.pageResponse;
+      const total = Number(pr?.total ?? pr?.[1] ?? raw.length);
+      const nextKey = pr?.nextKey ?? pr?.[0];
+      if (raw.length >= total || !nextKey || nextKey === "0x") break;
+      key = nextKey;
+    }
+    return raw.map((v) => {
       const operator = v.operatorAddress ?? v[0];
       const desc = v.description ?? v[6];
       return {
