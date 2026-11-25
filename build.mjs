@@ -14,5 +14,8 @@ cpSync("index.html", "docs/index.html");
 cpSync("ja.html", "docs/ja.html");
 cpSync("en.html", "docs/en.html");
 cpSync("src/style.css", "docs/style.css");
+cpSync("logo42-96.png", "docs/logo42-96.png");
+cpSync("favicon-32.png", "docs/favicon-32.png");
+cpSync("apple-touch-icon.png", "docs/apple-touch-icon.png");
 writeFileSync("docs/CNAME", "staking.id42.win");
 console.log("docs/ ready");
