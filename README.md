@@ -14,8 +14,8 @@
 - English: https://ql1-infinite42-guppy-histoire.github.io/42-staking/en.html
 
 ## 対応ウォレット
-- **EVM ウォレット全般**（`window.ethereum`）：MetaMask、FoxWallet（EVM モード）、
-  GuppyWallet ブラウザ拡張機能など。42 Chain（チェーンID 421018）へ自動で
+- **EVM ウォレット全般**（`window.ethereum`）：MetaMask、FoxWallet（EVM モード）
+  など。42 Chain（チェーンID 421018）へ自動で
   切り替え／追加を提案します（chainId は 16 進で `0x66c9a`）。
 
 ## できること
@@ -68,7 +68,7 @@ node test/live-smoke.mjs  # ライブ読み取りスモークテスト
 ## English summary
 
 A static site for **directly** staking 42 with 42 Chain validators with any
-EVM wallet (MetaMask, FoxWallet in EVM mode, the GuppyWallet extension, …).
+EVM wallet (MetaMask, FoxWallet in EVM mode, …).
 This is direct staking — not liquid staking (st42). Sister site to the
 QOM staking site for QL1.
 
