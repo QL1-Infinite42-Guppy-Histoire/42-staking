@@ -2,7 +2,7 @@
 import assert from "node:assert";
 import {
   valoperFromHex, bech32Encode, hexToBytes,
-  percentOf, delegateMax, gasReserve, format42, format42Int, parse42ToWei, weiToDecimalString, E18,
+  percentOf, delegateMax, gasReserve, format42, format42Int, format42Personal, parse42ToWei, weiToDecimalString, E18,
 } from "../src/chain.js";
 
 // bech32 known pair (live-verified)
@@ -41,6 +41,15 @@ assert.strictEqual(format42Int(trillionWei), "1,000,048,951,521");
 assert.strictEqual(format42Int(1999999999999999999n), "1"); // 1.999… -> 1, not 2
 assert.strictEqual(format42Int(999999999999999999n), "0"); // 0.999… -> 0
 assert.strictEqual(format42Int(-1500000000000000000n), "-1");
+// Personal display (2026-11-26): up to 3 decimals, trailing zeros trimmed,
+// truncated never rounded; sub-0.001 positives stay visible.
+assert.strictEqual(format42Personal(0n), "0");
+assert.strictEqual(format42Personal(42n * E18 / 1000n), "0.042");
+assert.strictEqual(format42Personal(15n * E18 / 10n), "1.5");
+assert.strictEqual(format42Personal(123456n * E18 / 10000n), "12.345"); // 12.3456 -> truncated
+assert.strictEqual(format42Personal(4n * E18 / 10000n), "0.0004"); // not crushed to "0"
+assert.strictEqual(format42Personal(10850n * E18), "10,850");
+assert.strictEqual(format42Personal(-15n * E18 / 10n), "-1.5");
 assert.strictEqual(parse42ToWei("1.5"), 15n * E18 / 10n);
 assert.strictEqual(weiToDecimalString(percentOf(delegateMax(bal, gp), 100)), weiToDecimalString(delegateMax(bal, gp)));
 console.log("format/parse: OK");

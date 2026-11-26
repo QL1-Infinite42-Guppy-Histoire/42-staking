@@ -2,7 +2,7 @@ import { BrowserProvider, Contract } from "ethers";
 import {
   CHAIN_ID_HEX, EXPLORER_TX, STAKING_PRECOMPILE, DISTRIBUTION_PRECOMPILE,
   STAKING_ABI, DISTRIBUTION_ABI, GAS_LIMITS, FALLBACK_GAS_PRICE, UNBONDING_DAYS,
-  E18, percentOf, delegateMax, format42, format42Int, weiToDecimalString,
+  E18, percentOf, delegateMax, format42, format42Int, format42Personal, weiToDecimalString,
   getReadProvider, fetchValidators, fetchMyState, fetchValidatorCommission,
   getReadFailures,
 } from "./chain.js";
@@ -38,18 +38,11 @@ function commissionPct(commissionWei) {
   return (Math.round(pct * 100) / 100).toString() + "%";
 }
 function fmtCompact(wei) {
-  // Abbreviated totals in validator rows are integer-only too
-  // (2026-11-25): the scaled value is floored, never rounded up.
-  const n = Number(BigInt(wei || 0n) / E18);
-  if (LANG === "ja") {
-    if (n >= 1e8) return Math.floor(n / 1e8).toLocaleString("ja-JP") + "億";
-    if (n >= 1e4) return Math.floor(n / 1e4).toLocaleString("ja-JP") + "万";
-    return n.toLocaleString("ja-JP");
-  }
-  if (n >= 1e9) return Math.floor(n / 1e9).toLocaleString("en-US") + "B";
-  if (n >= 1e6) return Math.floor(n / 1e6).toLocaleString("en-US") + "M";
-  if (n >= 1e3) return Math.floor(n / 1e3).toLocaleString("en-US") + "K";
-  return n.toLocaleString("en-US");
+  // Validator-row totals are exact comma-separated integers (2026-11-26):
+  // the previous unit abbreviation floored to the unit (10,850 -> "1万"),
+  // so every validator in the 1万 range rendered identically despite
+  // different real totals. Integer-only, truncated — never rounded.
+  return format42Int(wei);
 }
 
 // ---- display fitting (2026-11-25) -------------------------------------------
@@ -321,11 +314,11 @@ function updateReadWarn() {
 
 function renderMine() {
   const s = myState;
-  $("stAvailable").textContent = format42Int(s.balance) + " 42";
-  $("stDelegated").textContent = format42Int(s.totalDelegated) + " 42";
-  $("stRewards").textContent = format42Int(s.totalRewards) + " 42";
+  $("stAvailable").textContent = format42Personal(s.balance) + " 42";
+  $("stDelegated").textContent = format42Personal(s.totalDelegated) + " 42";
+  $("stRewards").textContent = format42Personal(s.totalRewards) + " 42";
   $("stUnbonding").textContent = s.unbonding.length
-    ? `${format42Int(s.unbondingTotal)} 42 (${s.unbonding.length})` : "0 42";
+    ? `${format42Personal(s.unbondingTotal)} 42 (${s.unbonding.length})` : "0 42";
   fitStatusAmounts();
   const claimable = s.delegations.filter((d) => (d.rewardWei ?? 0n) >= CLAIM_MIN_WEI);
   $("claimAllBtn").disabled = !claimable.length;
@@ -339,7 +332,7 @@ function renderMine() {
       <div class="deleg">
         <div class="head">
           <b>${esc(d.validator.moniker || t("noName"))}</b>
-          <span class="amount-line">${t("delegatedLine", format42Int(d.amountWei), format42Int(d.rewardWei ?? 0n))}</span>
+          <span class="amount-line">${t("delegatedLine", format42Personal(d.amountWei), format42Personal(d.rewardWei ?? 0n))}</span>
         </div>
         <div class="row">
           <button data-act="more" data-val="${esc(d.validator.valoper)}">${t("actMore")}</button>
@@ -387,7 +380,7 @@ function renderValidators() {
       ${validatorsBonded.map((v) => {
         const mine = myByVal.get(v.valoper);
         return `<tr>
-          <td><b>${esc(v.moniker || t("noName"))}</b>${v.jailed ? '<span class="badge warn">' + t("jailedBadge") + '</span>' : ""}${mine ? `<div class="mine">${t("youLabel")}${format42Int(mine.amountWei)} 42</div>` : ""}</td>
+          <td><b>${esc(v.moniker || t("noName"))}</b>${v.jailed ? '<span class="badge warn">' + t("jailedBadge") + '</span>' : ""}${mine ? `<div class="mine">${t("youLabel")}${format42Personal(mine.amountWei)} 42</div>` : ""}</td>
           <td><span class="badge on">${t("statusBonded")}</span></td>
           <td>${commissionPct(v.commission)}</td>
           <td>${fmtCompact(v.tokens)} 42</td>

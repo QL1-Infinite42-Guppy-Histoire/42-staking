@@ -132,6 +132,30 @@ export function format42(wei, maxDp = 4) {
 // never rounded. Internal values and amounts actually sent keep full
 // precision; only these rendered strings drop the decimals.
 export function format42Int(wei) { return format42(wei, 0); }
+// Personal-amount display (2026-11-26): the status card and the user's own
+// per-validator rows show up to 3 decimal places, trailing zeros trimmed —
+// the integer-only rendering crushed sub-1 rewards to "0", hiding whether
+// anything was accumulating. Truncation, never rounding up (same rule as
+// format42): 12.3456 -> "12.345". Exception: a positive amount below 0.001
+// would still render as "0", so its precision is extended until the first
+// significant digit (plus up to 2 more) is visible: 0.0004 -> "0.0004".
+// Display only — amounts actually sent keep full precision.
+export function format42Personal(wei) {
+  let v = BigInt(wei || 0n);
+  const neg = v < 0n; if (neg) v = -v;
+  const whole = v / E18;
+  const frac18 = (v % E18).toString().padStart(18, "0");
+  let frac;
+  if (whole > 0n || frac18.slice(0, 3) !== "000") {
+    frac = frac18.slice(0, 3).replace(/0+$/, "");
+  } else if (v > 0n) {
+    const first = frac18.search(/[1-9]/);
+    frac = frac18.slice(0, first + 3).replace(/0+$/, "");
+  } else {
+    frac = "";
+  }
+  return (neg ? "-" : "") + whole.toLocaleString("en-US") + (frac ? "." + frac : "");
+}
 export function weiToDecimalString(v) {
   v = BigInt(v);
   const whole = v / E18;
